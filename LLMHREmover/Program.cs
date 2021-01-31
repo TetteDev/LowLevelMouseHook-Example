@@ -137,17 +137,11 @@ namespace LLMHREmover
 
 			//Console.WriteLine($"[{DateTime.Now.ToLongTimeString()}] Hello from MouseCallback");
 
-			//if ((lParam->flags & LLMHF_INJECTED) != 0)
-			//	lParam->flags &= ~LLMHF_INJECTED;
-
-			//if ((lParam->flags & LOWER_IL_INJECTED) != 0)
-			//	lParam->flags &= ~LOWER_IL_INJECTED;
-
 			if ((lParam->flags & LLMHF_INJECTED) != 0)
-				Console.WriteLine($"LLMHF_INJECTED has been detected!");
+				lParam->flags &= ~LLMHF_INJECTED;
 
 			if ((lParam->flags & LOWER_IL_INJECTED) != 0)
-				Console.WriteLine($"LLMHF_LOWER_IL_INJECTED has been detected!");
+				lParam->flags &= ~LOWER_IL_INJECTED;
 
 			return CallNextHookEx(IntPtr.Zero, code, wParam, (IntPtr)lParam);
         }

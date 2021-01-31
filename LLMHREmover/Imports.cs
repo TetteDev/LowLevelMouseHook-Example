@@ -150,8 +150,6 @@ namespace LLMHREmover
 			public uint mouseData;
 			public uint flags;
 			public uint time;
-
-			// ULONG_PTR dwExtraInfo;
 			public nuint* dwExtraInfo;
 		}
 
