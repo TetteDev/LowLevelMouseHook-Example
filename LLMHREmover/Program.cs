@@ -64,8 +64,6 @@ namespace LLMHREmover
 					if (!UnhookWindowsHookEx(_activeHook)) 
 						Console.WriteLine($"UnhookWindowsHookEx with parameter '{_activeHook}' returned false");
 
-					_activeHook = 0;
-
 					lock (_activeHookLockObject)
 					{
 						_activeHook = 0;
