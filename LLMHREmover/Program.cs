@@ -62,11 +62,13 @@ namespace LLMHREmover
 					{
 						_activeHookMouse = SetWindowsHookExMouse(HookType.WH_MOUSE_LL, &LowLevelMouseCallback, hModule, 0);
 						Debug.Assert(_activeHookMouse > 0, "SetWindowsHookExMouse returned 0");
+						Console.WriteLine("Mouse hook initialized succcessfully!");
 					}
 					lock (_activeHookKeybdLockObject)
 					{
 						_activeHookKeyboard = SetWindowsHookExKeyboard(HookType.WH_KEYBOARD_LL, &LowLevelKeyboardCallback, hModule, 0);
 						Debug.Assert(_activeHookKeyboard > 0, "SetWindowsHookExKeyboard returned 0");
+						Console.WriteLine("Keyboard hook initialized succcessfully!");
 					}
 
 					Console.WriteLine("Starting MessagePump");
@@ -104,7 +106,6 @@ namespace LLMHREmover
 			Console.WriteLine("Pressing enter will close the program ...");
 			Console.ReadLine();
 		}
-
 
 		[UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
         private unsafe static nint LowLevelMouseCallback(int code, IntPtr wParam, MSLLHOOKSTRUCT* lParam)
