@@ -143,8 +143,10 @@ namespace LLMHREmover
 			if ((lParam->flags & LOWER_IL_INJECTED) != 0)
 				lParam->flags &= ~LOWER_IL_INJECTED;
 
-			return CallNextHookEx(IntPtr.Zero, code, wParam, (IntPtr)lParam);
-        }
+			var d = Unsafe.AsRef<IntPtr>(lParam);
+
+			return CallNextHookEx(IntPtr.Zero, code, wParam, Unsafe.AsRef<IntPtr>(lParam));
+		}
 
 		[UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
 		private unsafe static nint LowLevelKeyboardCallback(int code, IntPtr wParam, KBDLLHOOKSTRUCT* lParam)
@@ -171,7 +173,7 @@ namespace LLMHREmover
 					lParam->flags &= ~LOWER_IL_INJECTED;
 			}
 
-			return CallNextHookEx(IntPtr.Zero, code, wParam, (IntPtr)lParam);
+			return CallNextHookEx(IntPtr.Zero, code, wParam, Unsafe.AsRef<IntPtr>(lParam));
 		}
 	}
 }
