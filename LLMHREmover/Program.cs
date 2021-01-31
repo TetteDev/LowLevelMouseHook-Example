@@ -15,8 +15,21 @@ namespace LLMHREmover
 {
 	unsafe class Program
 	{
-		private static nint _activeHook = 0;
 		private static Thread _hookThread = null;
+
+		private static nint _activeHook = 0;
+		private static readonly object _activeHookLockObject = new();
+
+		public static nint ActiveHookHandle
+		{
+			get
+			{
+				lock (_activeHookLockObject)
+				{
+					return _activeHook;
+				}
+			}
+		}
 
 		static unsafe void Main(string[] args)
 		{
@@ -31,10 +44,13 @@ namespace LLMHREmover
 				Debug.Assert(hModule > 0);
 
 				_hookThread = new Thread(() =>
-				{
-					_activeHook = SetWindowsHookEx(HookType.WH_MOUSE_LL, &LowLevelMouseCallback, hModule, 0);
-					Debug.Assert(_activeHook > 0, "SetWindowsHookEx returned 0");
-
+				{ 
+					lock (_activeHookLockObject)
+					{
+						_activeHook = SetWindowsHookEx(HookType.WH_MOUSE_LL, &LowLevelMouseCallback, hModule, 0);
+						Debug.Assert(_activeHook > 0, "SetWindowsHookEx returned 0");
+					}
+					
 					Console.WriteLine("Starting MessagePump");
 					MSG msg = default;
 
@@ -49,6 +65,11 @@ namespace LLMHREmover
 						Console.WriteLine($"UnhookWindowsHookEx with parameter '{_activeHook}' returned false");
 
 					_activeHook = 0;
+
+					lock (_activeHookLockObject)
+					{
+						_activeHook = 0;
+					}
 				});
 				_hookThread.Start();
 			}
