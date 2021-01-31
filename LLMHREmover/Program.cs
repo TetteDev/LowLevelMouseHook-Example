@@ -119,8 +119,8 @@ namespace LLMHREmover
 			if ((lParam->flags & LLMHF_INJECTED) != 0)
 				lParam->flags &= ~LLMHF_INJECTED;
 
-			if ((lParam->flags & LLKHF_LLMHF_LOWER_IL_INJECTED) != 0)
-				lParam->flags &= ~LLKHF_LLMHF_LOWER_IL_INJECTED;
+			if ((lParam->flags & LOWER_IL_INJECTED) != 0)
+				lParam->flags &= ~LOWER_IL_INJECTED;
 
 			return CallNextHookEx(IntPtr.Zero, code, wParam, (IntPtr)lParam);
         }
@@ -135,14 +135,17 @@ namespace LLMHREmover
 			// in some other program
 			// and then just checking for that constant value here before doing any stripping
 
-			// Only strip flags on KeyDown event
-			if ((int)wParam == WM_KEYDOWN)
+			// Only strip flags on KeyDown/KeyUp event
+			int keybd_event = (int)wParam;
+
+			if (keybd_event == WM_KEYDOWN 
+				|| keybd_event == WM_KEYUP)
 			{
 				if ((lParam->flags & LLKHF_INJECTED) != 0)
 					lParam->flags &= ~LLKHF_INJECTED;
 
-				if ((lParam->flags & LLKHF_LLMHF_LOWER_IL_INJECTED) != 0)
-					lParam->flags &= ~LLKHF_LLMHF_LOWER_IL_INJECTED;
+				if ((lParam->flags & LOWER_IL_INJECTED) != 0)
+					lParam->flags &= ~LOWER_IL_INJECTED;
 			}
 
 			return CallNextHookEx(IntPtr.Zero, code, wParam, (IntPtr)lParam);
