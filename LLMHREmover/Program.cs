@@ -119,8 +119,8 @@ namespace LLMHREmover
 			if ((lParam->flags & LLMHF_INJECTED) != 0)
 				lParam->flags &= ~LLMHF_INJECTED;
 
-			if ((lParam->flags & LLMHF_LOWER_IL_INJECTED) != 0)
-				lParam->flags &= ~LLMHF_LOWER_IL_INJECTED;
+			if ((lParam->flags & LLKHF_LLMHF_LOWER_IL_INJECTED) != 0)
+				lParam->flags &= ~LLKHF_LLMHF_LOWER_IL_INJECTED;
 
 			return CallNextHookEx(IntPtr.Zero, code, wParam, (IntPtr)lParam);
         }
@@ -141,8 +141,8 @@ namespace LLMHREmover
 				if ((lParam->flags & LLKHF_INJECTED) != 0)
 					lParam->flags &= ~LLKHF_INJECTED;
 
-				if ((lParam->flags & LLKHF_LOWER_IL_INJECTED) != 0)
-					lParam->flags &= ~LLKHF_LOWER_IL_INJECTED;
+				if ((lParam->flags & LLKHF_LLMHF_LOWER_IL_INJECTED) != 0)
+					lParam->flags &= ~LLKHF_LLMHF_LOWER_IL_INJECTED;
 			}
 
 			return CallNextHookEx(IntPtr.Zero, code, wParam, (IntPtr)lParam);

@@ -169,10 +169,9 @@ namespace LLMHREmover
 	public class Constants
 	{
 		public const int LLMHF_INJECTED = 0x00000001;
-		public const int LLMHF_LOWER_IL_INJECTED = 0x00000002;
-
 		public const int LLKHF_INJECTED = 0x00000010;
-		public const int LLKHF_LOWER_IL_INJECTED = 0x00000002;
+
+		public const int LLKHF_LLMHF_LOWER_IL_INJECTED = 0x00000002;
 
 		public const int WM_KEYDOWN = 0x0100;
 	}
