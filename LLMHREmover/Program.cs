@@ -80,18 +80,18 @@ namespace LLMHREmover
 
 					Console.WriteLine("GetMessage returned -1, unhooking our windows hook");
 
-					if (!UnhookWindowsHookEx(_activeHookMouse)) 
-						Console.WriteLine($"UnhookWindowsHookEx with parameter '{_activeHookMouse}' returned false");
-
-					if (!UnhookWindowsHookEx(_activeHookKeyboard))
-						Console.WriteLine($"UnhookWindowsHookEx with parameter '{_activeHookKeyboard}' returned false");
-
 					lock (_activeHookMouseLockObject)
 					{
+						if (!UnhookWindowsHookEx(_activeHookMouse))
+							Console.WriteLine($"UnhookWindowsHookEx with parameter '{_activeHookMouse}' returned false");
+
 						_activeHookMouse = 0;
 					}
 					lock (_activeHookKeybdLockObject)
 					{
+						if (!UnhookWindowsHookEx(_activeHookKeyboard))
+							Console.WriteLine($"UnhookWindowsHookEx with parameter '{_activeHookKeyboard}' returned false");
+
 						_activeHookKeyboard = 0;
 					}
 				});
