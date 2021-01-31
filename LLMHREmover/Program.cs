@@ -17,16 +17,29 @@ namespace LLMHREmover
 	{
 		private static Thread _hookThread = null;
 
-		private static nint _activeHook = 0;
-		private static readonly object _activeHookLockObject = new();
+		private static nint _activeHookMouse = 0;
+		private static readonly object _activeHookMouseLockObject = new();
 
-		public static nint ActiveHookHandle
+		private static nint _activeHookKeyboard = 0;
+		private static readonly object _activeHookKeybdLockObject = new();
+
+		public static nint ActiveHookMouseHandle
 		{
 			get
 			{
-				lock (_activeHookLockObject)
+				lock (_activeHookMouseLockObject)
 				{
-					return _activeHook;
+					return _activeHookMouse;
+				}
+			}
+		}
+		public static nint ActiveHookKeybdHandle
+		{
+			get
+			{
+				lock (_activeHookKeybdLockObject)
+				{
+					return _activeHookKeyboard;
 				}
 			}
 		}
@@ -45,12 +58,17 @@ namespace LLMHREmover
 
 				_hookThread = new Thread(() =>
 				{ 
-					lock (_activeHookLockObject)
+					lock (_activeHookMouseLockObject)
 					{
-						_activeHook = SetWindowsHookEx(HookType.WH_MOUSE_LL, &LowLevelMouseCallback, hModule, 0);
-						Debug.Assert(_activeHook > 0, "SetWindowsHookEx returned 0");
+						_activeHookMouse = SetWindowsHookExMouse(HookType.WH_MOUSE_LL, &LowLevelMouseCallback, hModule, 0);
+						Debug.Assert(_activeHookMouse > 0, "SetWindowsHookEx returned 0");
 					}
-					
+					lock (_activeHookKeybdLockObject)
+					{
+						_activeHookKeyboard = SetWindowsHookExKeyboard(HookType.WH_KEYBOARD_LL, &LowLevelKeyboardCallback, hModule, 0);
+						Debug.Assert(_activeHookMouse > 0, "SetWindowsHookEx returned 0");
+					}
+
 					Console.WriteLine("Starting MessagePump");
 					MSG msg = default;
 
@@ -61,12 +79,20 @@ namespace LLMHREmover
 					}
 
 					Console.WriteLine("GetMessage returned -1, unhooking our windows hook");
-					if (!UnhookWindowsHookEx(_activeHook)) 
-						Console.WriteLine($"UnhookWindowsHookEx with parameter '{_activeHook}' returned false");
 
-					lock (_activeHookLockObject)
+					if (!UnhookWindowsHookEx(_activeHookMouse)) 
+						Console.WriteLine($"UnhookWindowsHookEx with parameter '{_activeHookMouse}' returned false");
+
+					if (!UnhookWindowsHookEx(_activeHookKeyboard))
+						Console.WriteLine($"UnhookWindowsHookEx with parameter '{_activeHookKeyboard}' returned false");
+
+					lock (_activeHookMouseLockObject)
 					{
-						_activeHook = 0;
+						_activeHookMouse = 0;
+					}
+					lock (_activeHookKeybdLockObject)
+					{
+						_activeHookKeyboard = 0;
 					}
 				});
 				_hookThread.Start();
@@ -79,10 +105,11 @@ namespace LLMHREmover
 			Console.ReadLine();
 		}
 
+
 		[UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
         private unsafe static nint LowLevelMouseCallback(int code, IntPtr wParam, MSLLHOOKSTRUCT* lParam)
         {
-			if (code < 0) return CallNextHookEx(IntPtr.Zero, code, wParam, lParam);
+			if (code < 0) return CallNextHookEx(IntPtr.Zero, code, wParam, (IntPtr)lParam);
 
 			// Can filter out only mouse movements from your application only by
 			// setting mInfo->dwExtraInfo to some constant value when calling SendInput/mouse_event
@@ -95,7 +122,30 @@ namespace LLMHREmover
 			if ((lParam->flags & LLMHF_LOWER_IL_INJECTED) != 0)
 				lParam->flags &= ~LLMHF_LOWER_IL_INJECTED;
 
-			return CallNextHookEx(IntPtr.Zero, code, wParam, lParam);
+			return CallNextHookEx(IntPtr.Zero, code, wParam, (IntPtr)lParam);
         }
-    }
+
+		[UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
+		private unsafe static nint LowLevelKeyboardCallback(int code, IntPtr wParam, KBDLLHOOKSTRUCT* lParam)
+		{
+			if (code < 0) return CallNextHookEx(IntPtr.Zero, code, wParam, (IntPtr)lParam);
+
+			// Can filter out only mouse movements from your application only by
+			// setting mInfo->dwExtraInfo to some constant value when calling SendInput/keybdevent
+			// in some other program
+			// and then just checking for that constant value here before doing any stripping
+
+			// Only strip flags on KeyDown event
+			if ((int)wParam == WM_KEYDOWN)
+			{
+				if ((lParam->flags & LLKHF_INJECTED) != 0)
+					lParam->flags &= ~LLKHF_INJECTED;
+
+				if ((lParam->flags & LLKHF_LOWER_IL_INJECTED) != 0)
+					lParam->flags &= ~LLKHF_LOWER_IL_INJECTED;
+			}
+
+			return CallNextHookEx(IntPtr.Zero, code, wParam, (IntPtr)lParam);
+		}
+	}
 }

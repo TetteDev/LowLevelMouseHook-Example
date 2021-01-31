@@ -9,11 +9,16 @@ namespace LLMHREmover
 	unsafe class Imports
 	{
 		public static delegate* unmanaged[Stdcall]<HookType, // hookType
-															 //delegate* managed<int, nint, MSLLHOOKSTRUCT*, nint>,  // lpFn, managed: (int code, IntPtr wParam, IntPtr lParam)
 												   delegate* unmanaged[Stdcall]<int, nint, MSLLHOOKSTRUCT*, nint>,  // lpFn, managed: (int code, IntPtr wParam, IntPtr lParam)
 												   nint, // hMod
 												   uint, // dwThreadIt
-												   nint  /* Return Type */> SetWindowsHookEx = null;
+												   nint  /* Return Type */> SetWindowsHookExMouse = null;
+
+		public static delegate* unmanaged[Stdcall]<HookType, // hookType
+												   delegate* unmanaged[Stdcall]<int, nint, KBDLLHOOKSTRUCT*, nint>,  // lpFn, managed: (int code, IntPtr wParam, IntPtr lParam)
+												   nint, // hMod
+												   uint, // dwThreadIt
+												   nint  /* Return Type */> SetWindowsHookExKeyboard = null;
 
 		public static delegate* unmanaged[Stdcall]<nint, // hkk
 												   bool  /* Return Type */> UnhookWindowsHookEx = null;
@@ -22,7 +27,7 @@ namespace LLMHREmover
 		public static delegate* unmanaged[Stdcall]<nint, // hkk
 												   int,  // nCode
 												   nint, // wParam
-												   MSLLHOOKSTRUCT*, // lParam
+												   IntPtr, // lParam
 												   nint  /* Return Type */> CallNextHookEx = null;
 
 		public static delegate* unmanaged[Stdcall]<char*, // module name
@@ -45,9 +50,10 @@ namespace LLMHREmover
 			Debug.Assert(user32dll > 0);
 			Debug.Assert(kernel32dll > 0);
 
-			SetWindowsHookEx = (delegate* unmanaged[Stdcall]<HookType, delegate* unmanaged[Stdcall]<int, nint, MSLLHOOKSTRUCT*, nint>, nint, uint, nint>)NativeLibrary.GetExport(user32dll, "SetWindowsHookExA");
+			SetWindowsHookExMouse = (delegate* unmanaged[Stdcall]<HookType, delegate* unmanaged[Stdcall]<int, nint, MSLLHOOKSTRUCT*, nint>, nint, uint, nint>)NativeLibrary.GetExport(user32dll, "SetWindowsHookExA");
+			SetWindowsHookExKeyboard = (delegate* unmanaged[Stdcall]<HookType, delegate* unmanaged[Stdcall]<int, nint, KBDLLHOOKSTRUCT*, nint>, nint, uint, nint>)NativeLibrary.GetExport(user32dll, "SetWindowsHookExA");
 			UnhookWindowsHookEx = (delegate* unmanaged[Stdcall]<nint, bool>)NativeLibrary.GetExport(user32dll, "UnhookWindowsHookEx");
-			CallNextHookEx = (delegate* unmanaged[Stdcall]<nint, int, nint, MSLLHOOKSTRUCT*, nint>)NativeLibrary.GetExport(user32dll, "CallNextHookEx");
+			CallNextHookEx = (delegate* unmanaged[Stdcall]<nint, int, nint, IntPtr, nint>)NativeLibrary.GetExport(user32dll, "CallNextHookEx");
 			GetModuleHandle = (delegate* unmanaged[Stdcall]<char*, nint>)NativeLibrary.GetExport(kernel32dll, "GetModuleHandleW");
 
 			GetMessage = (delegate* unmanaged[Stdcall]<MSG*, nint, uint, uint, int>)NativeLibrary.GetExport(user32dll, "GetMessageW");
@@ -57,7 +63,8 @@ namespace LLMHREmover
 			//NativeLibrary.Free(user32dll);
 			//NativeLibrary.Free(kernel32dll);
 
-			Debug.Assert(SetWindowsHookEx != null);
+			Debug.Assert(SetWindowsHookExMouse != null);
+			Debug.Assert(SetWindowsHookExKeyboard != null);
 			Debug.Assert(UnhookWindowsHookEx != null);
 			Debug.Assert(CallNextHookEx   != null);
 			Debug.Assert(GetModuleHandle  != null);
@@ -66,7 +73,8 @@ namespace LLMHREmover
 			Debug.Assert(TranslateMessage != null);
 			Debug.Assert(DispatchMessage != null);
 
-			return SetWindowsHookEx != null
+			return SetWindowsHookExMouse != null
+				   && SetWindowsHookExKeyboard != null
 				   && UnhookWindowsHookEx != null
 				   && CallNextHookEx != null
 				   && GetModuleHandle != null
@@ -146,11 +154,26 @@ namespace LLMHREmover
 			// ULONG_PTR dwExtraInfo;
 			public nuint* dwExtraInfo;
 		}
+
+		[StructLayout(LayoutKind.Sequential)]
+		public unsafe struct KBDLLHOOKSTRUCT
+		{
+			public uint vkCode;
+			public uint scanCode;
+			public nint flags;
+			public uint time;
+			public nuint* dwExtraInfo;
+		}
 	}
 
 	public class Constants
 	{
 		public const int LLMHF_INJECTED = 0x00000001;
 		public const int LLMHF_LOWER_IL_INJECTED = 0x00000002;
+
+		public const int LLKHF_INJECTED = 0x00000010;
+		public const int LLKHF_LOWER_IL_INJECTED = 0x00000002;
+
+		public const int WM_KEYDOWN = 0x0100;
 	}
 }
