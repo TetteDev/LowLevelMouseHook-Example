@@ -48,24 +48,43 @@ namespace LLMHREmover
 		{
 			if (!Init()) throw new NullReferenceException($"Failed initializing function pointers");
 
-			using Process process = Process.GetCurrentProcess();
-			using ProcessModule module = process.MainModule;
+			InitializeHooks();
 
+			Console.WriteLine("Pressing enter will close the program ...");
+			Console.ReadLine();
+		}
+
+		private static void InitializeHooks()
+		{
+			var process = Process.GetCurrentProcess();
+			var module = process.MainModule;
 			fixed (char* lpModName = module.ModuleName)
 			{
 				nint hModule = GetModuleHandle(lpModName);
 				Debug.Assert(hModule > 0);
 
 				_hookThread = new Thread(() =>
-				{ 
+				{
 					lock (_activeHookMouseLockObject)
 					{
+						if (_activeHookMouse > 0)
+						{
+							UnhookWindowsHookEx(_activeHookMouse);
+							_activeHookMouse = 0;
+						}
+
 						_activeHookMouse = SetWindowsHookExMouse(HookType.WH_MOUSE_LL, &LowLevelMouseCallback, hModule, 0);
 						Debug.Assert(_activeHookMouse > 0, "SetWindowsHookExMouse returned 0");
 						Console.WriteLine("Mouse hook initialized succcessfully!");
 					}
 					lock (_activeHookKeybdLockObject)
 					{
+						if (_activeHookKeyboard > 0)
+						{
+							UnhookWindowsHookEx(_activeHookKeyboard);
+							_activeHookKeyboard = 0;
+						}
+
 						_activeHookKeyboard = SetWindowsHookExKeyboard(HookType.WH_KEYBOARD_LL, &LowLevelKeyboardCallback, hModule, 0);
 						Debug.Assert(_activeHookKeyboard > 0, "SetWindowsHookExKeyboard returned 0");
 						Console.WriteLine("Keyboard hook initialized succcessfully!");
@@ -80,19 +99,21 @@ namespace LLMHREmover
 						DispatchMessage(&msg);
 					}
 
-					Console.WriteLine("GetMessage returned -1, unhooking our windows hook");
+					Console.WriteLine("GetMessage returned -1 or cancellation was requested, unhooking our windows hook");
 
 					lock (_activeHookMouseLockObject)
 					{
-						if (!UnhookWindowsHookEx(_activeHookMouse))
-							Console.WriteLine($"UnhookWindowsHookEx with parameter '{_activeHookMouse}' returned false");
+						if (_activeHookMouse > 0)
+							if (!UnhookWindowsHookEx(_activeHookMouse))
+								Console.WriteLine($"UnhookWindowsHookEx with parameter '{_activeHookMouse}' returned false");
 
 						_activeHookMouse = 0;
 					}
 					lock (_activeHookKeybdLockObject)
 					{
-						if (!UnhookWindowsHookEx(_activeHookKeyboard))
-							Console.WriteLine($"UnhookWindowsHookEx with parameter '{_activeHookKeyboard}' returned false");
+						if (_activeHookKeyboard > 0)
+							if (!UnhookWindowsHookEx(_activeHookKeyboard))
+								Console.WriteLine($"UnhookWindowsHookEx with parameter '{_activeHookKeyboard}' returned false");
 
 						_activeHookKeyboard = 0;
 					}
@@ -102,9 +123,6 @@ namespace LLMHREmover
 
 			Debug.Assert(_hookThread != null
 						 && _hookThread.ThreadState == System.Threading.ThreadState.Running);
-
-			Console.WriteLine("Pressing enter will close the program ...");
-			Console.ReadLine();
 		}
 
 		[UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
@@ -117,11 +135,19 @@ namespace LLMHREmover
 			// in some other program
 			// and then just checking for that constant value here before doing any stripping
 
+			//Console.WriteLine($"[{DateTime.Now.ToLongTimeString()}] Hello from MouseCallback");
+
+			//if ((lParam->flags & LLMHF_INJECTED) != 0)
+			//	lParam->flags &= ~LLMHF_INJECTED;
+
+			//if ((lParam->flags & LOWER_IL_INJECTED) != 0)
+			//	lParam->flags &= ~LOWER_IL_INJECTED;
+
 			if ((lParam->flags & LLMHF_INJECTED) != 0)
-				lParam->flags &= ~LLMHF_INJECTED;
+				Console.WriteLine($"LLMHF_INJECTED has been detected!");
 
 			if ((lParam->flags & LOWER_IL_INJECTED) != 0)
-				lParam->flags &= ~LOWER_IL_INJECTED;
+				Console.WriteLine($"LLMHF_LOWER_IL_INJECTED has been detected!");
 
 			return CallNextHookEx(IntPtr.Zero, code, wParam, (IntPtr)lParam);
         }
@@ -135,6 +161,8 @@ namespace LLMHREmover
 			// setting mInfo->dwExtraInfo to some constant value when calling SendInput/keybdevent
 			// in some other program
 			// and then just checking for that constant value here before doing any stripping
+
+			//Console.WriteLine($"[{DateTime.Now.ToLongTimeString()}] Hello from KeyboardCallback");
 
 			// Only strip flags on KeyDown/KeyUp event
 			int keybd_event = (int)wParam;

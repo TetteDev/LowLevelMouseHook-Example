@@ -147,9 +147,9 @@ namespace LLMHREmover
 		public unsafe struct MSLLHOOKSTRUCT
 		{
 			public POINT pt;
-			public nint mouseData;
-			public nint flags;
-			public nint time;
+			public uint mouseData;
+			public uint flags;
+			public uint time;
 
 			// ULONG_PTR dwExtraInfo;
 			public nuint* dwExtraInfo;
@@ -160,7 +160,7 @@ namespace LLMHREmover
 		{
 			public uint vkCode;
 			public uint scanCode;
-			public nint flags;
+			public uint flags;
 			public uint time;
 			public nuint* dwExtraInfo;
 		}
@@ -168,10 +168,10 @@ namespace LLMHREmover
 
 	public class Constants
 	{
-		public const int LLMHF_INJECTED = 0x00000001;
-		public const int LLKHF_INJECTED = 0x00000010;
+		public const uint LLMHF_INJECTED = 0x00000001;
+		public const uint LLKHF_INJECTED = 0x00000010;
 
-		public const int LOWER_IL_INJECTED = 0x00000002;
+		public const uint LOWER_IL_INJECTED = 0x00000002;
 
 		public const int WM_KEYDOWN = 0x0100;
 		public const int WM_KEYUP = 0x0101;
