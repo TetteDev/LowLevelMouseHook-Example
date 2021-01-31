@@ -61,12 +61,12 @@ namespace LLMHREmover
 					lock (_activeHookMouseLockObject)
 					{
 						_activeHookMouse = SetWindowsHookExMouse(HookType.WH_MOUSE_LL, &LowLevelMouseCallback, hModule, 0);
-						Debug.Assert(_activeHookMouse > 0, "SetWindowsHookEx returned 0");
+						Debug.Assert(_activeHookMouse > 0, "SetWindowsHookExMouse returned 0");
 					}
 					lock (_activeHookKeybdLockObject)
 					{
 						_activeHookKeyboard = SetWindowsHookExKeyboard(HookType.WH_KEYBOARD_LL, &LowLevelKeyboardCallback, hModule, 0);
-						Debug.Assert(_activeHookMouse > 0, "SetWindowsHookEx returned 0");
+						Debug.Assert(_activeHookKeyboard > 0, "SetWindowsHookExKeyboard returned 0");
 					}
 
 					Console.WriteLine("Starting MessagePump");
