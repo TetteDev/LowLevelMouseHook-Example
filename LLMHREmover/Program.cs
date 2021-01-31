@@ -128,7 +128,7 @@ namespace LLMHREmover
 		[UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
         private unsafe static nint LowLevelMouseCallback(int code, IntPtr wParam, MSLLHOOKSTRUCT* lParam)
         {
-			if (code < 0) return CallNextHookEx(IntPtr.Zero, code, wParam, (IntPtr)(&lParam));
+			if (code < 0) return CallNextHookEx(IntPtr.Zero, code, wParam, Unsafe.AsRef<IntPtr>(lParam));
 
 			// Can filter out only mouse movements from your application only by
 			// setting mInfo->dwExtraInfo to some constant value when calling SendInput/mouse_event
@@ -143,13 +143,13 @@ namespace LLMHREmover
 			if ((lParam->flags & LOWER_IL_INJECTED) != 0)
 				lParam->flags &= ~LOWER_IL_INJECTED;
 
-			return CallNextHookEx(IntPtr.Zero, code, wParam, (IntPtr)(&lParam));
+			return CallNextHookEx(IntPtr.Zero, code, wParam, Unsafe.AsRef<IntPtr>(lParam));
 		}
 
 		[UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
 		private unsafe static nint LowLevelKeyboardCallback(int code, IntPtr wParam, KBDLLHOOKSTRUCT* lParam)
 		{
-			if (code < 0) return CallNextHookEx(IntPtr.Zero, code, wParam, (IntPtr)(&lParam));
+			if (code < 0) return CallNextHookEx(IntPtr.Zero, code, wParam, Unsafe.AsRef<IntPtr>(lParam));
 
 			// Can filter out only mouse movements from your application only by
 			// setting mInfo->dwExtraInfo to some constant value when calling SendInput/keybdevent
@@ -171,9 +171,7 @@ namespace LLMHREmover
 					lParam->flags &= ~LOWER_IL_INJECTED;
 			}
 
-			IntPtr t = (IntPtr)(&lParam);
-
-			return CallNextHookEx(IntPtr.Zero, code, wParam, (IntPtr)(&lParam));
+			return CallNextHookEx(IntPtr.Zero, code, wParam, Unsafe.AsRef<IntPtr>(lParam));
 		}
 	}
 }
