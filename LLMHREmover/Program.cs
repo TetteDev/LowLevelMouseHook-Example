@@ -32,6 +32,13 @@ namespace LLMHREmover
 					return _activeHookMouse;
 				}
 			}
+			set
+			{
+				lock (_activeHookMouseLockObject)
+				{
+					_activeHookMouse = value;
+				}
+			}
 		}
 		public static nint ActiveHookKeybdHandle
 		{
@@ -42,13 +49,19 @@ namespace LLMHREmover
 					return _activeHookKeyboard;
 				}
 			}
+			set
+			{
+				lock (_activeHookKeybdLockObject)
+				{
+					_activeHookKeyboard = value;
+				}
+			}
 		}
 
 		static unsafe void Main(string[] args)
 		{
 			if (!Init()) throw new NullReferenceException($"Failed initializing function pointers");
-
-			InitializeHooks();
+			else InitializeHooks();
 
 			Console.WriteLine("Pressing enter will close the program ...");
 			Console.ReadLine();
@@ -97,6 +110,9 @@ namespace LLMHREmover
 					{
 						TranslateMessage(&msg);
 						DispatchMessage(&msg);
+
+						if (ActiveHookMouseHandle == 0 && ActiveHookKeybdHandle == 0)
+							break;
 					}
 
 					Console.WriteLine("GetMessage returned -1 or cancellation was requested, unhooking our windows hook");
@@ -128,14 +144,7 @@ namespace LLMHREmover
 		[UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
         private unsafe static nint LowLevelMouseCallback(int code, IntPtr wParam, MSLLHOOKSTRUCT* lParam)
         {
-			if (code < 0) return CallNextHookEx(IntPtr.Zero, code, wParam, Unsafe.AsRef<IntPtr>(lParam));
-
-			// Can filter out only mouse movements from your application only by
-			// setting mInfo->dwExtraInfo to some constant value when calling SendInput/mouse_event
-			// in some other program
-			// and then just checking for that constant value here before doing any stripping
-
-			//Console.WriteLine($"[{DateTime.Now.ToLongTimeString()}] Hello from MouseCallback");
+			if (code < 0) return CallNextHookEx(IntPtr.Zero, code, wParam, *(IntPtr*)lParam);
 
 			if ((lParam->flags & LLMHF_INJECTED) != 0)
 				lParam->flags &= ~LLMHF_INJECTED;
@@ -143,22 +152,14 @@ namespace LLMHREmover
 			if ((lParam->flags & LOWER_IL_INJECTED) != 0)
 				lParam->flags &= ~LOWER_IL_INJECTED;
 
-			return CallNextHookEx(IntPtr.Zero, code, wParam, Unsafe.AsRef<IntPtr>(lParam));
+			return CallNextHookEx(IntPtr.Zero, code, wParam, *(IntPtr*)lParam);
 		}
 
 		[UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
 		private unsafe static nint LowLevelKeyboardCallback(int code, IntPtr wParam, KBDLLHOOKSTRUCT* lParam)
 		{
-			if (code < 0) return CallNextHookEx(IntPtr.Zero, code, wParam, Unsafe.AsRef<IntPtr>(lParam));
+			if (code < 0) return CallNextHookEx(IntPtr.Zero, code, wParam, *(IntPtr*)lParam);
 
-			// Can filter out only mouse movements from your application only by
-			// setting mInfo->dwExtraInfo to some constant value when calling SendInput/keybdevent
-			// in some other program
-			// and then just checking for that constant value here before doing any stripping
-
-			//Console.WriteLine($"[{DateTime.Now.ToLongTimeString()}] Hello from KeyboardCallback");
-
-			// Only strip flags on KeyDown/KeyUp event
 			int keybd_event = (int)wParam;
 
 			if (keybd_event == WM_KEYDOWN 
@@ -171,7 +172,7 @@ namespace LLMHREmover
 					lParam->flags &= ~LOWER_IL_INJECTED;
 			}
 
-			return CallNextHookEx(IntPtr.Zero, code, wParam, Unsafe.AsRef<IntPtr>(lParam));
+			return CallNextHookEx(IntPtr.Zero, code, wParam, *(IntPtr*)lParam);
 		}
 	}
 }

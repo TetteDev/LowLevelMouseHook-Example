@@ -30,6 +30,7 @@ namespace LLMHREmover
 												   IntPtr, // lParam
 												   nint  /* Return Type */> CallNextHookEx = null;
 
+
 		public static delegate* unmanaged[Stdcall]<char*, // module name
 												   nint   /* Return Type */> GetModuleHandle = null;
 
